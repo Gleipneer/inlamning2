@@ -1,0 +1,16 @@
+DROP inlamning2;
+
+File - Open SQL Script
+Kör hela koden.
+sedan:
+
+USE inlamning2;
+
+SHOW TABLES;
+SHOW TRIGGERS;
+SHOW PROCEDURE STATUS WHERE Db = 'inlamning2';
+
+SELECT * FROM Kunder;
+SELECT * FROM Bocker;
+SELECT * FROM Bestallningar;
+SELECT * FROM Orderrader;
