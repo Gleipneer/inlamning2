@@ -97,6 +97,26 @@ Inget ska upprepas i onödan, varje tabell ska representera en sak och varje kol
 
 ---
 
+# Restore från backup i MySQL Workbench
+
+1. Öppna `Server -> Data Import`
+2. Välj `Import from Self-Contained File`
+3. Välj filen `bokhandel_backup.sql`
+4. Välj eller skapa `Default Target Schema`
+5. Klicka `Start Import`
+
+# Verifiering efter restore
+
+    sql
+USE inlamning2;
+SHOW TABLES;
+SELECT * FROM kunder;
+SELECT * FROM bocker;
+SELECT * FROM bestallningar;
+SELECT * FROM orderrader;
+SELECT * FROM kundlogg;
+SHOW TRIGGERS;
+
 	Filer & Diagram
 
 Filer i repot:

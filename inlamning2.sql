@@ -7,7 +7,7 @@ Joakim Emilsson - YH25
 DROP DATABASE IF EXISTS inlamning2;
 
 -- Skapa databasen
--- CHAR och COLLATE som stöd för svenska och andra tecken.
+-- CHARACTER SET och COLLATE som stöd för svenska och andra tecken.
 CREATE DATABASE inlamning2
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -110,6 +110,19 @@ INSERT INTO Kunder (Namn, Email, Telefon, Adress) VALUES
     ('Cecilia Holm', 'holmcecilia@gmail.com', '0703333333', 'Havsgatan 12'),
     ('Anna Svensson', 'anna.svensson@gmail.com', '0704444444', 'Skolgatan 9');
 
+-- Här lägger jag till en ny användare för att trigga Kundloggen.    
+    INSERT INTO Kunder (Namn, Email, Telefon, Adress) VALUES
+	('Janne Hammare', 'krimstigen87@gmail.com', '0760178855', 'Alsteråvägen 32');
+    
+-- Visar Kundlogg i sjunkande ordning.
+SELECT * FROM Kundlogg
+ORDER BY LoggID DESC;
+-- Visar Kundlogg i stigande ordning.
+SELECT * FROM Kundlogg
+ORDER BY LoggID ASC;
+    
+   
+
 -- Testdata: Bocker
 -- Här lägger jag in fyra böcker
 INSERT INTO Bocker (Titel, ISBN, Forfattare, Pris, Lagerstatus) VALUES
@@ -128,6 +141,7 @@ INSERT INTO Bestallningar (KundID, Datum, Totalbelopp) VALUES
 
 -- Testdata: Orderrader
 -- Här kopplas böcker till beställningar och Radpris visar summan för varje orderrad
+-- Denna INSERT INTO triggar "trigga_minska_lager"
 INSERT INTO Orderrader (OrderID, BokID, Antal, Radpris) VALUES
     (1, 1, 2, 159.80),
     (2, 2, 4, 51.60),
@@ -136,7 +150,6 @@ INSERT INTO Orderrader (OrderID, BokID, Antal, Radpris) VALUES
     (5, 1, 1, 79.90);
 
 -- Denna SELECT bevisar att triggern "trigga_minska_lager" har fungerat!
--- Till exempel: Bok 1 startade på 200 i lager, nu borde den ha minskat
 SELECT BokID, Titel, Lagerstatus FROM Bocker;
 
 -- Denna SELECT visar att triggern för Kundlogg fungerar
@@ -224,7 +237,7 @@ SELECT * FROM Kunder WHERE KundID = 1;
 -- Detta är en transaktion med DELETE
 -- Eftersom Kundlogg har foreign key till Kunder tar jag först bort loggraden för kunden
 -- Sedan tar jag bort kunden och ångrar allt med ROLLBACK
--- Funderade över ON CASCADE här.
+-- Funderade över ON DELETE CASCADE här.
 START TRANSACTION;
 DELETE FROM Kundlogg
 WHERE KundID = 4;
@@ -239,4 +252,43 @@ ROLLBACK;
 
 -- Denna SELECT visar att kunden inte togs bort på riktigt
 SELECT * FROM Kunder;
+
+
+-- Stresstest på riktigt!
+USE inlamning2;
+
+SET SESSION cte_max_recursion_depth = 100000;
+
+START TRANSACTION;
+
+INSERT INTO Kunder (Namn, Email, Telefon, Adress)
+WITH RECURSIVE nummerserie AS (
+    SELECT 1 AS n
+    UNION ALL
+    SELECT n + 1
+    FROM nummerserie
+    WHERE n < 100000
+)
+SELECT
+    CONCAT('Stresstest Kund ', n) AS Namn,
+    CONCAT('stresstest', n, '@example.com') AS Email,
+    CONCAT('079', LPAD(n, 7, '0')) AS Telefon,
+    CONCAT('Testgatan ', n) AS Adress
+FROM nummerserie;
+
+COMMIT;
+
+SELECT COUNT(*) AS AntalKunder FROM Kunder;
+SELECT COUNT(*) AS AntalLoggrader FROM Kundlogg;
+
+SELECT * FROM Kunder WHERE Namn = 'Stresstest Kund 50000';
+SELECT * FROM Kunder WHERE Email = 'stresstest50000@example.com';
+
+SHOW INDEX FROM Kunder;
+
+EXPLAIN SELECT * FROM Kunder WHERE Email = 'stresstest50000@example.com';
+EXPLAIN SELECT * FROM Kunder WHERE Namn = 'Stresstest Kund 50000';
+
+SELECT * FROM Kunder WHERE Email = 'stresstest50000@example.com';
+SELECT * FROM Kunder WHERE Namn = 'Stresstest Kund 50000';
 
