@@ -1,12 +1,13 @@
 /*
 SQL inlämningsuppgift "En liten bokhandel".
-Joakim Emilsson - YH24
+Joakim Emilsson - YH25
 */
 
 -- Tar bort databasen om den redan finns så att filen går att köra om från början
 DROP DATABASE IF EXISTS inlamning2;
 
 -- Skapa databasen
+-- CHAR och COLLATE som stöd för svenska och andra tecken.
 CREATE DATABASE inlamning2
 CHARACTER SET utf8mb4
 COLLATE utf8mb4_unicode_ci;
@@ -109,9 +110,6 @@ INSERT INTO Kunder (Namn, Email, Telefon, Adress) VALUES
     ('Cecilia Holm', 'holmcecilia@gmail.com', '0703333333', 'Havsgatan 12'),
     ('Anna Svensson', 'anna.svensson@gmail.com', '0704444444', 'Skolgatan 9');
 
--- Denna SELECT visar alla kunder i tabellen Kunder
-SELECT * FROM Kunder;
-
 -- Testdata: Bocker
 -- Här lägger jag in fyra böcker
 INSERT INTO Bocker (Titel, ISBN, Forfattare, Pris, Lagerstatus) VALUES
@@ -120,9 +118,6 @@ INSERT INTO Bocker (Titel, ISBN, Forfattare, Pris, Lagerstatus) VALUES
     ('JionDao och Kranen', 1343453234, 'Irma Svensson', 89.00, 31),
     ('Databas för Nybörjare', 9781234567890, 'Fredrik Lorensson', 199.00, 15);
 
--- Denna SELECT visar alla böcker i tabellen Bocker
-SELECT * FROM Bocker;
-
 -- Testdata: Bestallningar
 INSERT INTO Bestallningar (KundID, Datum, Totalbelopp) VALUES
     (1, '2025-01-02', 159.80),
@@ -130,9 +125,6 @@ INSERT INTO Bestallningar (KundID, Datum, Totalbelopp) VALUES
     (1, '2025-03-10', 89.00),
     (1, '2025-03-15', 199.00),
     (3, '2025-03-18', 79.90);
-
--- Denna SELECT visar alla beställningar i tabellen Bestallningar
-SELECT * FROM Bestallningar;
 
 -- Testdata: Orderrader
 -- Här kopplas böcker till beställningar och Radpris visar summan för varje orderrad
@@ -143,11 +135,8 @@ INSERT INTO Orderrader (OrderID, BokID, Antal, Radpris) VALUES
     (4, 4, 1, 199.00),
     (5, 1, 1, 79.90);
 
--- Denna SELECT visar alla orderrader i tabellen Orderrader
-SELECT * FROM Orderrader;
-
--- PRESENTATIONSTIPS: Denna SELECT bevisar att triggern "trigga_minska_lager" har fungerat!
--- (Till exempel: Bok 1 startade på 200 i lager, nu borde den ha minskat)
+-- Denna SELECT bevisar att triggern "trigga_minska_lager" har fungerat!
+-- Till exempel: Bok 1 startade på 200 i lager, nu borde den ha minskat
 SELECT BokID, Titel, Lagerstatus FROM Bocker;
 
 -- Denna SELECT visar att triggern för Kundlogg fungerar
@@ -169,22 +158,13 @@ SELECT *
 FROM Kunder
 WHERE Email LIKE '%gmail.com';
 
--- Denna SHOW bevisar för läraren att indexet på Email faktiskt är skapat
+-- Denna SHOW bevisar att indexet på Email faktiskt är skapat
 SHOW INDEX FROM Kunder;
 
 -- Denna SELECT använder ORDER BY för att sortera böcker efter pris från lägst till högst, ascending alltså.
 SELECT *
 FROM Bocker
 ORDER BY Pris ASC;
-
--- Denna JOIN visar vilka böcker som ingår i varje order
-SELECT
-    Orderrader.OrderID,
-    Bocker.Titel,
-    Orderrader.Antal,
-    Orderrader.Radpris
-FROM Orderrader
-JOIN Bocker ON Orderrader.BokID = Bocker.BokID;
 
 -- Detta är en INNER JOIN som visar vilka kunder som har lagt beställningar
 -- Bara kunder som faktiskt har en beställning kommer med i resultatet
@@ -244,6 +224,7 @@ SELECT * FROM Kunder WHERE KundID = 1;
 -- Detta är en transaktion med DELETE
 -- Eftersom Kundlogg har foreign key till Kunder tar jag först bort loggraden för kunden
 -- Sedan tar jag bort kunden och ångrar allt med ROLLBACK
+-- Funderade över ON CASCADE här.
 START TRANSACTION;
 DELETE FROM Kundlogg
 WHERE KundID = 4;
@@ -258,60 +239,4 @@ ROLLBACK;
 
 -- Denna SELECT visar att kunden inte togs bort på riktigt
 SELECT * FROM Kunder;
-
--- Skapa en tom testdatabas för restore to backup testet
-DROP DATABASE IF EXISTS inlamning2_restoretest;
-CREATE DATABASE inlamning2_restoretest
-CHARACTER SET utf8mb4
-COLLATE utf8mb4_unicode_ci;
--- Återställer från backup
-USE inlamning2_restoretest;
-SHOW TABLES;
-SHOW DATABASES;
-
-USE inlamning2;
-SHOW TABLES;
-
-USE inlamning2_restoretest;
-SHOW TABLES;
-
--- Stresstest, C# liknande iterationer, ångest!
-USE inlamning2;
-
-DELIMITER //
-
-CREATE PROCEDURE StresstestaKunder()
-BEGIN
-    DECLARE i INT DEFAULT 1;
-    
-    START TRANSACTION;
-    
-    WHILE i <= 200000 DO      
-        INSERT IGNORE INTO Kunder (Namn, Email, Telefon, Adress)
-        VALUES (
-            CONCAT('TestKund ', i), 
-            CONCAT('test', i, '@gmail.com'), 
-            CONCAT('075', LPAD(i, 7, '0')), 
-            'Stressgatan 1'
-        );
-        SET i = i + 1;
-    END WHILE;
-    
-    COMMIT;
-END //
-
-DELIMITER ;
-
--- 1. Detta kommando KÖR loopen och skapar 200 000 kunder Även triggen triggas.
-CALL StresstestaKunder();
-
-
--- använder Index och går supersnabbt trots 200 000 Kunder:
-SELECT * FROM Kunder WHERE Email = 'test199999@gmail.com';
--- Jämför: Sökning på Namn (saknar Index) vilket tvingar databasen att "läsa" / scanna alla 200 000 kunder = går mycket långsammare.
-SELECT * FROM Kunder WHERE Namn = 'TestKund 199999';
-
-
-SHOW INDEX FROM Kunder;
-
 
