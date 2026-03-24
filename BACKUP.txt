@@ -1,16 +1,21 @@
-DROP inlamning2;
+# backup.md
 
-File - Open SQL Script
-Kör hela koden.
-sedan:
+## Restore från backup i MySQL Workbench
 
+1. Öppna `Server -> Data Import`
+2. Välj `Import from Self-Contained File`
+3. Välj filen `bokhandel_backup.sql`
+4. Välj eller skapa `Default Target Schema`
+5. Klicka `Start Import`
+
+## Verifiering efter restore
+
+    sql
 USE inlamning2;
-
 SHOW TABLES;
+SELECT * FROM kunder;
+SELECT * FROM bocker;
+SELECT * FROM bestallningar;
+SELECT * FROM orderrader;
+SELECT * FROM kundlogg;
 SHOW TRIGGERS;
-SHOW PROCEDURE STATUS WHERE Db = 'inlamning2';
-
-SELECT * FROM Kunder;
-SELECT * FROM Bocker;
-SELECT * FROM Bestallningar;
-SELECT * FROM Orderrader;
