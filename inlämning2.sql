@@ -7,7 +7,9 @@ Joakim Emilsson - YH24
 DROP DATABASE IF EXISTS inlamning2;
 
 -- Skapa databasen
-CREATE DATABASE inlamning2;
+CREATE DATABASE inlamning2
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 
 -- Välj att arbeta i databasen inlamning2
 USE inlamning2;
@@ -259,7 +261,9 @@ SELECT * FROM Kunder;
 
 -- Skapa en tom testdatabas för restore to backup testet
 DROP DATABASE IF EXISTS inlamning2_restoretest;
-CREATE DATABASE inlamning2_restoretest;
+CREATE DATABASE inlamning2_restoretest
+CHARACTER SET utf8mb4
+COLLATE utf8mb4_unicode_ci;
 -- Återställer från backup
 USE inlamning2_restoretest;
 SHOW TABLES;
